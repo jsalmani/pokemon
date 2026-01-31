@@ -10,6 +10,7 @@ import { REFERENCE_POKEMON } from '@/data/referencePokemon';
 export default function Home() {
   const [generatedCard, setGeneratedCard] = useState<PokemonCardType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [cardHistory, setCardHistory] = useState<PokemonCardType[]>([]);
@@ -60,6 +61,47 @@ export default function Home() {
     const exampleCard = REFERENCE_POKEMON[name];
     if (exampleCard) {
       setGeneratedCard(exampleCard);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!generatedCard) return;
+
+    setIsGeneratingImage(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageDescription: generatedCard.imageDescription,
+          pokemonName: generatedCard.name,
+          pokemonType: generatedCard.type,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate image');
+      }
+
+      const data = await response.json();
+
+      // Update the card with the generated image
+      const updatedCard = { ...generatedCard, imageUrl: data.imageUrl };
+      setGeneratedCard(updatedCard);
+
+      // Update in history
+      setCardHistory(prev =>
+        prev.map((card) => (card.name === generatedCard.name ? updatedCard : card))
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate image');
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 
@@ -165,7 +207,40 @@ export default function Home() {
                 </div>
 
                 {/* Card Actions */}
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <button
+                    onClick={handleGenerateImage}
+                    disabled={isGeneratingImage}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      isGeneratingImage
+                        ? 'bg-green-400 text-white cursor-wait'
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                    }`}
+                  >
+                    {isGeneratingImage ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Generating...
+                      </span>
+                    ) : (
+                      'Generate Image'
+                    )}
+                  </button>
                   <button
                     onClick={() => setIsEditing(true)}
                     className="px-6 py-2 bg-white text-purple-900 rounded-lg font-medium hover:bg-purple-100 transition-colors"

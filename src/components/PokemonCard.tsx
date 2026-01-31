@@ -101,16 +101,19 @@ export default function PokemonCard({ card, scale = 1 }: PokemonCardProps) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center p-4 text-center">
-                <div className="text-6xl mb-2" style={{ fontSize: `${60 * scale}px` }}>
+              <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
+                <div className="text-4xl mb-1" style={{ fontSize: `${40 * scale}px` }}>
                   {TYPE_ICONS[card.type]}
                 </div>
+                {/* Image description shown when no image */}
+                <p
+                  className="text-xs text-gray-700 line-clamp-4 overflow-hidden"
+                  style={{ fontSize: `${9 * scale}px` }}
+                >
+                  {card.imageDescription}
+                </p>
               </div>
             )}
-            {/* Image description overlay */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center">
-              {card.imageDescription}
-            </div>
           </div>
 
           {/* Ability Section */}
